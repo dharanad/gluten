@@ -163,3 +163,11 @@ Gluten new parameters:
 | iam.role.session.name | gluten-session |
 | endpoint.region | (none) |
 | aws.imds.enabled | true |
+
+Gluten configures:
+| Name | Default Value | 
+|------|---------------|
+|spark.gluten.velox.awsSdkLogLevel|FATAL|
+|spark.gluten.velox.s3UseProxyFromEnv|false|
+|spark.gluten.velox.s3PayloadSigningPolicy|Never|
+|spark.gluten.velox.s3LogLocation|(none)|
