@@ -3045,6 +3045,35 @@ class GlutenClickHouseTPCHSaltNullParquetSuite
 
   }
 
+  test("row number aggregate topk handles first array result offset") {
+    withSQLConf(
+      (CHConfig.runtimeSettings("enable_window_group_limit_to_aggregate"), "true"),
+      (CHConfig.runtimeSettings("window.aggregate_topk_high_cardinality_threshold"), "2.0")
+    ) {
+      spark.sql("drop table if exists test_win_top_first_offset")
+      spark.sql("create table test_win_top_first_offset (a string, b int) using parquet")
+      spark.sql("insert into test_win_top_first_offset values ('a', 2), ('a', 1)")
+
+      compareResultsAgainstVanillaSpark(
+        """
+          |select * from (
+          |  select a, b, row_number() over (partition by a order by b) as r
+          |  from test_win_top_first_offset
+          |) where r <= 1
+          |""".stripMargin,
+        compareResult = true,
+        df => {
+          val aggregateGroupLimit = collectWithSubqueries(df.queryExecution.executedPlan) {
+            case e: CHAggregateGroupLimitExecTransformer => e
+          }
+          assert(aggregateGroupLimit.nonEmpty)
+        }
+      )
+
+      spark.sql("drop table if exists test_win_top_first_offset")
+    }
+  }
+
   test("GLUTEN-7905 get topk of window by window") {
     withSQLConf(
       (CHConfig.runtimeSettings("enable_window_group_limit_to_aggregate"), "true"),
